@@ -1,5 +1,7 @@
 # 🧲 Snap & Split
 
+Live at **https://snap.shalonely.com**
+
 PreK math (ages 3–5): **count**, **put together** and **take apart** with friendly blocks, up to 10. Everything is read aloud, so no reading is needed.
 
 - **Count:** blocks sit in a ten-frame. Tapping a block counts it out loud ("one, two, three…") and puts a number on it. Then pick the number.

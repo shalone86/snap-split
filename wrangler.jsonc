@@ -10,9 +10,8 @@
   },
   "ai": { "binding": "AI" },
   "observability": { "enabled": true },
-  "workers_dev": true
-  // Custom domain: add a comma after "workers_dev": true and uncomment:
-  // "routes": [{ "pattern": "snap.shalonely.com", "custom_domain": true }]
+  "workers_dev": true,
+  "routes": [{ "pattern": "snap.shalonely.com", "custom_domain": true }]
   //
   // Optional: require a passcode for the voice API (keeps strangers off your Workers AI quota):
   //   npx wrangler secret put APP_PASSCODE
