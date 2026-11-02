@@ -1,0 +1,79 @@
+/* Snap & Split. Two block colors: blue (first group) and yellow (second group). */
+
+.cb { color: var(--blue-ink); } .cy { color: var(--yellow-ink); } .cg { color: var(--muted); }
+.title .cb { color: var(--blue); } .title .cy { color: var(--yellow-dark); } .title .amp { color: var(--accent); font-size: .7em; }
+.title { font-size: clamp(2.8rem, 13vw, 4.2rem); }
+.hero-blocks { display: flex; justify-content: center; align-items: center; gap: 6px; margin: 4px 0 10px; }
+
+/* a block: big, friendly, with a little face */
+.blk {
+  --s: 46px;
+  position: relative; display: inline-block; width: var(--s); height: var(--s); border-radius: 12px; flex: none;
+  box-shadow: inset -4px -4px 0 rgb(0 0 0 / .18), inset 3px 3px 0 rgb(255 255 255 / .35);
+  background:
+    radial-gradient(circle at 34% 40%, #2b2340 0 7%, transparent 8%),
+    radial-gradient(circle at 66% 40%, #2b2340 0 7%, transparent 8%),
+    radial-gradient(ellipse 22% 12% at 50% 66%, transparent 55%, #2b2340 60% 75%, transparent 80%),
+    var(--bc);
+}
+.blk.a { --bc: var(--blue); }
+.blk.b { --bc: var(--yellow); }
+.blk.counted::after {
+  content: attr(data-n); position: absolute; top: -10px; right: -10px; width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--accent); color: #fff; font: 800 .95rem var(--font-display);
+  box-shadow: 0 2px 0 var(--accent-strong);
+}
+.blk.taken { filter: saturate(.4); opacity: .65; }
+.blk.pop-in { animation: popin .35s ease-out both; }
+.frame .cell:nth-child(2) .blk.pop-in { animation-delay: .05s; } .frame .cell:nth-child(3) .blk.pop-in { animation-delay: .1s; }
+.frame .cell:nth-child(4) .blk.pop-in { animation-delay: .15s; } .frame .cell:nth-child(5) .blk.pop-in { animation-delay: .2s; }
+@keyframes popin { from { transform: scale(0); } }
+
+/* the stage */
+.stage { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 6px 0 10px; }
+.plates { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; transition: opacity .3s; }
+.plates.empty { opacity: .35; }
+.plate {
+  display: grid; grid-template-columns: repeat(3, var(--bs, 46px)); gap: 6px; padding: 10px; min-width: 100px; min-height: 66px;
+  justify-content: center; align-content: center; border-radius: 22px; background: var(--surface); border: 3px dashed var(--border);
+}
+.plate.pa { border-color: color-mix(in srgb, var(--blue) 45%, transparent); background: var(--blue-soft); }
+.plate.pb { border-color: color-mix(in srgb, var(--yellow) 70%, transparent); background: var(--yellow-soft); }
+.snap-plus { font: 800 2.4rem var(--font-display); color: var(--muted); }
+
+/* ten-frame: 5 or 10 cells */
+.frame { display: grid; grid-template-columns: repeat(5, 58px); gap: 6px; padding: 10px; border-radius: 22px; background: var(--surface); border: 3px solid var(--border); box-shadow: var(--shadow); }
+.frame .cell { width: 58px; height: 58px; border-radius: 14px; background: var(--surface-2); display: grid; place-items: center; }
+.frame.counting { cursor: pointer; }
+.frame.tap-here { cursor: pointer; }
+
+.away-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.away-label { font: 800 1rem var(--font-display); color: var(--muted); }
+.plate.away { grid-template-columns: repeat(5, 46px); min-width: 280px; background: var(--surface); }
+
+.sentence { font: 800 2.6rem/1 var(--font-display); margin: 4px 0 0; min-height: 1em; letter-spacing: .03em; }
+
+.take-left { margin: 0; font: 800 1.2rem var(--font-display); }
+.take-left b { display: inline-block; font-size: 1.6rem; color: var(--accent-strong); min-width: 1.2em; text-align: center; }
+
+/* answer buttons: the number and its dots */
+.num-choice { flex-direction: column; gap: 4px; min-width: 92px; min-height: 92px; }
+.num-choice b { font-size: 2.4rem; line-height: 1; }
+.mini-dots { display: grid; grid-template-columns: repeat(5, 9px); gap: 3px; justify-content: center; }
+.mini-dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+
+.level-card.free { border: 2px dashed var(--border); background: var(--surface); }
+.free-view .pm { display: flex; justify-content: center; gap: 6px; margin-top: 6px; }
+.free-view .pm .btn { min-width: 48px; font-size: 1.3rem; }
+.plate-col { display: flex; flex-direction: column; align-items: center; }
+
+@media (max-width: 400px) {
+  .blk { --s: 40px; }
+  .plate { --bs: 40px; gap: 5px; padding: 8px; }
+  .frame { grid-template-columns: repeat(5, 52px); gap: 5px; }
+  .frame .cell { width: 52px; height: 52px; }
+  .plate.away { grid-template-columns: repeat(5, 40px); min-width: 250px; }
+}
+
+.brand, .nav a { white-space: nowrap; }
+@media (max-width: 420px) { .brand { font-size: 1.15rem; } .nav a { padding: 6px 9px; } }

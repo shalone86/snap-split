@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "snap-split",
+  "main": "worker/index.js",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "ai": { "binding": "AI" },
+  "observability": { "enabled": true },
+  "workers_dev": true
+  // Custom domain: add a comma after "workers_dev": true and uncomment:
+  // "routes": [{ "pattern": "snap.shalonely.com", "custom_domain": true }]
+  //
+  // Optional: require a passcode for the voice API (keeps strangers off your Workers AI quota):
+  //   npx wrangler secret put APP_PASSCODE
+}

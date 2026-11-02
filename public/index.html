@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Snap &amp; Split</title>
+  <meta name="description" content="PreK counting, adding and taking away with blocks that snap together and split apart. Everything is read aloud.">
+  <meta name="theme-color" content="#ff8a00">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Snap &amp; Split">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700;800&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="#/" class="brand" aria-label="Home"><span class="logo" aria-hidden="true"></span>Snap &amp; Split</a>
+    <nav class="nav" aria-label="Main">
+      <a href="#/" data-nav="home">Play</a>
+      <a href="#/free" data-nav="free">🧱 Free</a>
+      <a href="#/grownups" data-nav="grownups" aria-label="For grown-ups">⚙️</a>
+    </nav>
+  </header>
+  <main id="app"><p class="muted">Loading…</p></main>
+  <div id="fx" aria-hidden="true"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
