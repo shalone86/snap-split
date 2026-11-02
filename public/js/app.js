@@ -5,7 +5,7 @@ import * as S from "./kit/store.js";
 S.init("snapsplit:v1", { sentences: true });
 
 import { createRouter } from "./kit/router.js";
-import { speak, stop } from "./kit/tts.js";
+import { speak, stop, preload } from "./kit/tts.js";
 import { sfx } from "./kit/sound.js";
 import * as FX from "./kit/fx.js";
 import { keepDockVisible } from "./kit/dock.js";
@@ -355,3 +355,14 @@ installClickSounds();
 route();
 keepDockVisible();
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+
+// Warm the voice for the words said over and over (counting, praise, the usual instructions).
+preload([
+  ...Array.from({ length: 11 }, (_, n) => String(n)),
+  "Yes!", "That's right!", "You got it!", "Great counting!", "You did it!", "Super snapping!", "Wow!",
+  "How many blocks? Tap each one to count, then pick the number.",
+  "Snap! How many blocks now? Tap each one to count, then pick the number.",
+  "How many are left? Tap each one to count, then pick the number.",
+  "You did it! You got a new sticker!",
+  ...Array.from({ length: 10 }, (_, a) => Array.from({ length: 11 - a }, (_, b) => `${a} and ${b} make ${a + b}!`)).flat(),
+]);

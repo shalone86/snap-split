@@ -50,6 +50,24 @@ function serverUrl(text, voice) {
   return cache.get(key);
 }
 
+/**
+ * Fetch clips in the background so common words play instantly (the first tap on a number
+ * otherwise waits for the voice server). Quietly gives up if the server isn't answering.
+ */
+export function preload(texts) {
+  if (!player || typeof fetch === "undefined") return;
+  const queue = [...new Set(texts)];
+  let failures = 0;
+  const worker = async () => {
+    while (queue.length && failures < 3) {
+      const text = queue.shift();
+      if (!settings().readAloud || !(await useServer())) return;
+      try { await serverUrl(text, settings().voice); } catch { failures++; }
+    }
+  };
+  setTimeout(() => { for (let i = 0; i < 3; i++) worker(); }, 1500);
+}
+
 export function stop() {
   playId++;
   if (player && !player.paused) player.pause();
