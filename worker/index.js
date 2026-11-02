@@ -24,7 +24,7 @@ const AURA_MODEL = "@cf/deepgram/aura-2-en";
 const TTS_VOICE_LIST = ["thalia", "helena", "luna", "asteria", "aurora", "iris", "cora", "delia", "harmonia", "apollo", "arcas", "orion"];
 const TTS_VOICES = new Set(TTS_VOICE_LIST);
 const MAX_TEXT = 300;
-const ORIGIN_TIMEOUT_MS = 8000; // a sleeping Mac shouldn't keep a child waiting
+const ORIGIN_TIMEOUT_MS = 30000; // a first-time sentence takes a few seconds on the Mac; a sleeping Mac still falls back
 
 export default {
   async fetch(request, env, ctx) {
