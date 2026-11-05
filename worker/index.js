@@ -58,7 +58,7 @@ async function tts(url, env, ctx) {
   const tier = tierFor(text);
   const cache = caches.default;
   // Sentences sound the same whatever voice is chosen, so they share one cache entry.
-  const key = new Request(`https://tts.cache/${tier}/${tier === "word" ? voice : "melo"}/${encodeURIComponent(text)}`);
+  const key = new Request(`https://tts.cache/v2/${tier}/${tier === "word" ? voice : "melo"}/${encodeURIComponent(text)}`);
   const hit = await cache.match(key);
   if (hit) return hit;
 
@@ -72,9 +72,11 @@ async function tts(url, env, ctx) {
     }
   }
   if (!res) {
-    const raw = await env.AI.run(WORD_MODEL, { text, speaker: voice, encoding: "mp3" }, { returnRawResponse: true });
+    // WAV, not mp3: Safari won't reliably play Aura-2's very short mp3 clips (single numbers).
+    const raw = await env.AI.run(WORD_MODEL, { text, speaker: voice, encoding: "linear16", container: "wav", sample_rate: 24000 }, { returnRawResponse: true });
     if (!raw.ok) return json({ error: `tts failed (${raw.status})` }, 502);
-    res = audioResponse(raw.body, "aura");
+    const bytes = new Uint8Array(await raw.arrayBuffer());
+    res = audioResponse(bytes, "aura", audioType(bytes));
   }
   ctx.waitUntil(cache.put(key, res.clone()));
   return res;

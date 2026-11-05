@@ -43,6 +43,7 @@ test("single words and numbers use Aura-2 with the chosen voice", async () => {
   }
   assert.deepEqual(AI.calls.map((c) => c.model), ["@cf/deepgram/aura-2-en", "@cf/deepgram/aura-2-en"]);
   assert.equal(AI.calls[0].input.speaker, "luna");
+  assert.equal(AI.calls[0].input.container, "wav");
 });
 
 test("sentences use MeloTTS, and different voices share one cached clip", async () => {
