@@ -1,4 +1,4 @@
-// The Worker's voice chain: your server first, then Workers AI, with edge caching.
+// The Worker's voice tiers: Aura-2 for single words, MeloTTS for sentences, with edge caching.
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import worker from "../worker/index.js";
@@ -21,39 +21,54 @@ const call = async (env, path) => {
   return res;
 };
 const mp3 = () => new Uint8Array(2000).fill(7);
-const aura = (status = 200) => ({ calls: 0, async run() { this.calls++; return new Response(status === 200 ? mp3() : "x", { status }); } });
-
-test("uses your voice server first, and caches the clip", async () => {
-  const seen = [];
-  globalThis.fetch = async (url, init) => { seen.push([url, JSON.parse(init.body), init.headers]); return new Response(mp3(), { headers: { "content-type": "audio/mpeg" } }); };
-  const AI = aura();
-  const env = { AI, TTS_ORIGIN: "https://voice.test/", TTS_TOKEN: "tok" };
-  const r1 = await call(env, "/api/tts?text=Hello&voice=thalia");
-  assert.equal(r1.headers.get("x-voice-source"), "own");
-  assert.equal(seen[0][0], "https://voice.test/v1/audio/speech");
-  assert.deepEqual(seen[0][1], { model: "kokoro", input: "Hello", voice: "af_heart", response_format: "mp3", speed: 1 });
-  assert.equal(seen[0][2].authorization, "Bearer tok");
-  await call(env, "/api/tts?text=Hello&voice=thalia");
-  assert.equal(seen.length, 1, "second time comes from the cache");
-  assert.equal(AI.calls, 0);
+const b64 = () => btoa(String.fromCharCode(...mp3()));
+// A fake Workers AI: Aura-2 answers a raw response, MeloTTS answers { audio: base64 }.
+const ai = ({ auraStatus = 200, melo = "ok" } = {}) => ({
+  calls: [],
+  async run(model, input, opts) {
+    this.calls.push({ model, input, opts });
+    if (model.includes("melotts")) {
+      if (melo === "fail") throw new Error("melo down");
+      return { audio: b64() };
+    }
+    return new Response(auraStatus === 200 ? mp3() : "x", { status: auraStatus });
+  },
 });
 
-test("falls back to Workers AI when your server is down or sends junk", async () => {
-  for (const bad of [() => { throw new Error("offline"); }, () => new Response("<html>", { headers: { "content-type": "text/html" } })]) {
-    store.clear();
-    globalThis.fetch = async () => bad();
-    const AI = aura();
-    const r = await call({ AI, TTS_ORIGIN: "https://voice.test" }, "/api/tts?text=Hi");
+test("single words and numbers use Aura-2 with the chosen voice", async () => {
+  const AI = ai();
+  for (const text of ["seventeen", "twenty%20one"]) {
+    const r = await call({ AI }, `/api/tts?text=${text}&voice=luna`);
     assert.equal(r.headers.get("x-voice-source"), "aura");
-    assert.equal(AI.calls, 1);
   }
+  assert.deepEqual(AI.calls.map((c) => c.model), ["@cf/deepgram/aura-2-en", "@cf/deepgram/aura-2-en"]);
+  assert.equal(AI.calls[0].input.speaker, "luna");
 });
 
-test("without a voice server it works as before; errors let the app use the device voice", async () => {
-  const r = await call({ AI: aura() }, "/api/tts?text=Hi");
+test("sentences use MeloTTS, and different voices share one cached clip", async () => {
+  const AI = ai();
+  const r = await call({ AI }, "/api/tts?text=The%20dog%20runs%20fast&voice=luna");
+  assert.equal(r.headers.get("x-voice-source"), "melo");
+  assert.equal((await r.arrayBuffer()).byteLength, 2000);
+  assert.deepEqual(AI.calls[0].input, { prompt: "The dog runs fast", lang: "en" });
+  const again = await call({ AI }, "/api/tts?text=The%20dog%20runs%20fast&voice=orion");
+  assert.equal(again.headers.get("x-voice-source"), "melo");
+  assert.equal(AI.calls.length, 1, "second time comes from the cache");
+});
+
+test("a sentence falls back to Aura-2 if MeloTTS fails", async () => {
+  const AI = ai({ melo: "fail" });
+  const r = await call({ AI }, "/api/tts?text=The%20dog%20runs%20fast");
   assert.equal(r.headers.get("x-voice-source"), "aura");
-  const limited = await call({ AI: aura(429) }, "/api/tts?text=Hello%20again");
+  assert.equal(AI.calls.length, 2);
+});
+
+test("errors let the app use the device voice; health reports the voice", async () => {
+  const limited = await call({ AI: ai({ auraStatus: 429 }) }, "/api/tts?text=Hello");
   assert.equal(limited.status, 502);
-  const health = await (await call({ TTS_ORIGIN: "https://voice.test" }, "/api/health")).json();
+  assert.equal((await call({}, "/api/tts?text=Hello")).status, 503);
+  const health = await (await call({ AI: ai() }, "/api/health")).json();
   assert.equal(health.tts, true);
+  assert.equal(health.backend, "Cloudflare Workers AI");
+  assert.equal((await call({}, "/api/tts")).status, 400);
 });
