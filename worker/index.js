@@ -65,7 +65,8 @@ async function tts(url, env, ctx) {
   let res;
   if (tier === "sentence") {
     try {
-      res = audioResponse(await melotts(text, env), "melo");
+      const bytes = await melotts(text, env);
+      res = audioResponse(bytes, "melo", audioType(bytes));
     } catch (e) {
       console.warn("MeloTTS failed, using Aura-2:", String(e?.message ?? e));
     }
@@ -94,8 +95,11 @@ async function melotts(text, env) {
   return bytes;
 }
 
-const audioResponse = (body, source) => new Response(body, {
-  headers: { "content-type": "audio/mpeg", "cache-control": "public, max-age=2592000", "x-voice-source": source },
+/** MeloTTS sends WAV ("RIFF…"), not mp3. Label each clip by its real format so Safari plays it. */
+const audioType = (b) => (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 ? "audio/wav" : "audio/mpeg");
+
+const audioResponse = (body, source, type = "audio/mpeg") => new Response(body, {
+  headers: { "content-type": type, "cache-control": "public, max-age=2592000", "x-voice-source": source },
 });
 
 const json = (body, status = 200) =>

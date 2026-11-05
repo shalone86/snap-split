@@ -50,6 +50,7 @@ test("sentences use MeloTTS, and different voices share one cached clip", async 
   const r = await call({ AI }, "/api/tts?text=The%20dog%20runs%20fast&voice=luna");
   assert.equal(r.headers.get("x-voice-source"), "melo");
   assert.equal((await r.arrayBuffer()).byteLength, 2000);
+  assert.equal(r.headers.get("content-type"), "audio/mpeg");
   assert.deepEqual(AI.calls[0].input, { prompt: "The dog runs fast", lang: "en" });
   const again = await call({ AI }, "/api/tts?text=The%20dog%20runs%20fast&voice=orion");
   assert.equal(again.headers.get("x-voice-source"), "melo");
@@ -71,4 +72,11 @@ test("errors let the app use the device voice; health reports the voice", async 
   assert.equal(health.tts, true);
   assert.equal(health.backend, "Cloudflare Workers AI");
   assert.equal((await call({}, "/api/tts")).status, 400);
+});
+
+test("WAV clips from MeloTTS are labeled audio/wav", async () => {
+  const wav = new Uint8Array(2000); wav.set([0x52, 0x49, 0x46, 0x46]);
+  const AI = { async run() { return { audio: btoa(String.fromCharCode(...wav)) }; } };
+  const r = await call({ AI }, "/api/tts?text=Tap%20each%20block%20please");
+  assert.equal(r.headers.get("content-type"), "audio/wav");
 });
