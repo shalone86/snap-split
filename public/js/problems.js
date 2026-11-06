@@ -32,15 +32,15 @@ export function makeProblem(level, index, rand = Math.random) {
   const max = level.max;
   const big = max > 5 && index >= 2; // the first two of a "10" level stay small
   if (type === "count") {
-    const n = max > 5 ? randInt(rand, big ? 6 : 4, max) : randInt(rand, 1 + Math.min(index, 2), max);
+    const n = max > 5 ? randInt(rand, big ? 5 : 2, max) : randInt(rand, 1, max);
     return { type, n, answer: n };
   }
   if (type === "join") {
-    const total = max > 5 ? randInt(rand, big ? 6 : 4, max) : randInt(rand, 2 + Math.min(index, 2), max);
+    const total = max > 5 ? randInt(rand, big ? 6 : 3, max) : randInt(rand, 2, max);
     const a = randInt(rand, 1, total - 1);
     return { type, a, b: total - a, answer: total };
   }
-  const whole = max > 5 ? randInt(rand, big ? 6 : 4, max) : randInt(rand, 2 + Math.min(index, 2), max);
+  const whole = max > 5 ? randInt(rand, big ? 6 : 3, max) : randInt(rand, 2, max);
   const take = randInt(rand, 1, whole - 1);
   return { type: "split", whole, take, answer: whole - take };
 }

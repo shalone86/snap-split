@@ -5,7 +5,7 @@ const BASE_SETTINGS = {
   readAloud: true, // say every step out loud (for kids still learning to read)
   sounds: true, // sound effects
   ttsSource: "auto", // auto | server | browser
-  voice: "thalia", // Workers AI (Deepgram Aura-2) English voice
+  voice: "helena", // Workers AI (Deepgram Aura-2) English voice
   browserVoice: "",
   slow: false,
   passcode: "", // only if APP_PASSCODE is set on the Worker
@@ -24,7 +24,11 @@ export function init(key, extraSettings = {}) {
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY) ?? "null");
-    if (s) return { ...structuredClone(DEFAULTS), ...s, settings: { ...DEFAULTS.settings, ...s.settings } };
+    if (s) {
+      if (!s.settings?.voiceV2 && s.settings?.voice === "thalia") delete s.settings.voice;
+      if (s.settings) s.settings.voiceV2 = true;
+      return { ...structuredClone(DEFAULTS), ...s, settings: { ...DEFAULTS.settings, ...s.settings } };
+    }
   } catch { /* private mode or corrupted: start fresh */ }
   return structuredClone(DEFAULTS);
 }

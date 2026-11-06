@@ -13,8 +13,8 @@
 //   APP_PASSCODE     when set, API calls need header x-app-passcode
 
 const WORD_MODEL = "@cf/deepgram/aura-2-en";
-// Bright, clear Aura-2 English voices that suit young kids; the default first.
-const TTS_VOICE_LIST = ["thalia", "helena", "luna", "asteria", "aurora", "iris", "cora", "delia", "harmonia", "apollo", "arcas", "orion"];
+// Bright, clear Aura-2 English voices that suit young kids; the default (helena) first.
+const TTS_VOICE_LIST = ["helena", "thalia", "luna", "asteria", "aurora", "iris", "cora", "delia", "harmonia", "apollo", "arcas", "orion"];
 const TTS_VOICES = new Set(TTS_VOICE_LIST);
 const MAX_TEXT = 300;
 

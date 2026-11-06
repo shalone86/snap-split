@@ -50,13 +50,30 @@ function serverUrl(text, voice) {
   return cache.get(key);
 }
 
+const NUM_WORDS = [
+  "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+  "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty",
+];
+
+function normalizeTtsText(raw) {
+  let clean = String(raw ?? "").trim();
+  if (!clean) return "";
+  if (/^\d+$/.test(clean)) {
+    const n = Number(clean);
+    if (n >= 0 && n < NUM_WORDS.length) return `${NUM_WORDS[n]}.`;
+    return `${clean}.`;
+  }
+  if (!/[.!?]$/.test(clean)) clean += ".";
+  return clean;
+}
+
 /**
  * Fetch clips in the background so common words play instantly (the first tap on a number
  * otherwise waits for the voice server). Quietly gives up if the server isn't answering.
  */
 export function preload(texts) {
   if (!player || typeof fetch === "undefined") return;
-  const queue = [...new Set(texts)];
+  const queue = [...new Set(texts.map(normalizeTtsText).filter(Boolean))];
   let failures = 0;
   const worker = async () => {
     while (queue.length && failures < 3) {
@@ -115,14 +132,15 @@ async function speakBrowser(text, rate, id) {
 
 /** Say text aloud (if read-aloud is on, or force). Resolves when it's done. Never throws. */
 export async function speak(text, { force = false } = {}) {
-  if (!text || (!settings().readAloud && !force)) return;
+  const clean = normalizeTtsText(text);
+  if (!clean || (!settings().readAloud && !force)) return;
   stop();
   const id = playId;
   const rate = settings().slow ? 0.8 : 1;
   try {
     if (player && (await useServer())) {
       try {
-        const url = await serverUrl(text, settings().voice);
+        const url = await serverUrl(clean, settings().voice);
         if (id !== playId) return;
         return await playThrough(url, rate);
       } catch (e) {
@@ -131,7 +149,7 @@ export async function speak(text, { force = false } = {}) {
         console.warn("Server voice failed, using the device voice", e);
       }
     }
-    await speakBrowser(text, rate * 0.95, id);
+    await speakBrowser(clean, rate * 0.95, id);
   } catch (e) { console.warn(e); }
 }
 
