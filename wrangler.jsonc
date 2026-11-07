@@ -6,10 +6,12 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": true
   },
   "ai": { "binding": "AI" },
   "observability": { "enabled": true },
+  // Lives at angelio.org through the hub. The old address redirects there with saved progress (worker/moved.js).
+  "vars": { "HOME_URL": "https://angelio.org/snap/", "STORE_KEY": "snapsplit:v1" },
   "workers_dev": true,
   "routes": [{ "pattern": "snap.shalonely.com", "custom_domain": true }]
   //

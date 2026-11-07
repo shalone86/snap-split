@@ -30,6 +30,14 @@
   </header>
   <main id="app"><p class="muted">Loading…</p></main>
   <div id="fx" aria-hidden="true"></div>
+  <script>
+    // Saved progress carried over from the old address (see worker/moved.js). Only used if this
+    // device has no progress here yet, so it never overwrites anything.
+    try {
+      var m = location.hash.match(/^#migrate=(.*)$/);
+      if (m) { if (!localStorage.getItem("snapsplit:v1")) localStorage.setItem("snapsplit:v1", decodeURIComponent(m[1])); history.replaceState(null, "", location.pathname + "#/"); }
+    } catch (e) {}
+  </script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

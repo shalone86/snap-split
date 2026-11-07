@@ -1,9 +1,12 @@
 // Offline support: network first for the app (updates show right away), cache first for fonts
 // and voice clips. Bump VERSION when you change files, and list new files in ASSETS.
 
-const VERSION = "v5";
-const SHELL = `shell-${VERSION}`;
-const RUNTIME = "runtime-v1";
+const VERSION = "v6";
+// Cache names start with the app id: several apps can share one site (angelio.org/regroup/, /snap/…),
+// and each must only clean up its own caches.
+const APP = "snap";
+const SHELL = `${APP}-shell-${VERSION}`;
+const RUNTIME = `${APP}-runtime-v1`;
 
 const ASSETS = [
   "./", "index.html", "manifest.webmanifest", "icon.svg", "icons/icon-192.png", "icons/apple-touch-icon.png",
@@ -17,7 +20,7 @@ self.addEventListener("install", (e) => {
 });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys()
-    .then((keys) => Promise.all(keys.filter((k) => k !== SHELL && k !== RUNTIME).map((k) => caches.delete(k))))
+    .then((keys) => Promise.all(keys.filter((k) => (k.startsWith(`${APP}-`) || /^(shell|runtime)-/.test(k)) && k !== SHELL && k !== RUNTIME).map((k) => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 async function networkFirst(req) {
