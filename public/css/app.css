@@ -97,3 +97,42 @@
   .topbar .nav::-webkit-scrollbar { display: none; }
   .topbar .nav a { white-space: nowrap; }
 }
+
+/* ───────── Small screens ───────── */
+@media (max-width: 480px) {
+  .play { padding-bottom: 150px; }
+  .play-top { padding: 4px 0; }
+  .bubble { min-height: 0; padding: 6px 8px 6px 10px; margin-bottom: 8px; }
+  .mascot { font-size: 1.8rem; }
+  .say { font-size: 1.02rem; }
+}
+/* Phones turned sideways: blocks on the left, everything else in a column on the right. */
+@media (orientation: landscape) and (max-height: 520px) {
+  body.in-game main { max-width: none; padding: 4px 12px 12px; padding-right: 268px; }
+  .play { padding-bottom: 12px; }
+  .play-top { position: fixed; right: 0; top: 0; width: 256px; z-index: 31; padding: 6px 10px; }
+  .icon-btn { width: 36px; height: 36px; font-size: 1rem; border-radius: 11px; }
+  .dots i { width: 11px; height: 11px; }
+  .bubble { position: fixed; right: 0; top: 50px; width: 256px; z-index: 31; margin: 0; min-height: 0; padding: 4px 8px; border-radius: 0; border-width: 0 0 2px 2px; box-shadow: none; }
+  .mascot { font-size: 1.5rem; }
+  .say { font-size: .95rem; }
+  .dock { left: auto; right: 0; top: 0; bottom: 0; width: 256px; justify-content: flex-end; gap: 8px; background: var(--bg);
+    border-top: none; border-left: 2px solid var(--border); padding: 8px 10px max(10px, env(safe-area-inset-bottom)); }
+  .stage { gap: 10px; padding: 0; }
+  .blk { --s: 38px; }
+  .plate { --bs: 38px; gap: 5px; padding: 8px; min-height: 54px; }
+  .frame { grid-template-columns: repeat(5, 46px); gap: 5px; padding: 8px; }
+  .frame .cell { width: 46px; height: 46px; }
+  .plate.away { grid-template-columns: repeat(5, 38px); min-width: 230px; }
+  .sentence { font-size: 2rem; }
+  .num-choice { min-width: 70px; min-height: 70px; }
+  .choices { gap: 8px; }
+  .btn.big { font-size: 1.05rem; padding: 8px 14px; min-height: 46px; }
+  .lesson-card { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; align-items: start; padding: 10px 12px; }
+  .lesson-head { grid-column: 1 / -1; }
+  .lesson-rule { grid-column: 1; font-size: 1rem; margin: 6px 0; }
+  .lesson-example { grid-column: 2; grid-row: 2 / span 2; }
+  .lesson-actions { grid-column: 1; margin-top: 6px; justify-content: flex-start; }
+  .finish { padding-top: 8px; }
+  .hero { padding-top: 8px; }
+}
