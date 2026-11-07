@@ -172,3 +172,22 @@ body.in-game .topbar { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .title span, .mascot, .btn.pulse, .tap-here, .new-sticker span { animation: none !important; }
 }
+/* "How it works" lesson card (kit/lesson.js) */
+.lesson-card {
+  background: var(--surface); border: 3px solid var(--accent); border-radius: var(--radius); padding: 14px 16px 16px;
+  box-shadow: var(--shadow); animation: lesson-in .35s ease-out both;
+}
+@keyframes lesson-in { from { transform: translateY(12px); opacity: 0; } }
+.lesson-head { display: flex; align-items: center; gap: 10px; }
+.lesson-emoji { font-size: 2.2rem; }
+.lesson-titles { flex: 1; min-width: 0; }
+.lesson-kicker { font: 800 .75rem var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--accent-strong); }
+.lesson-title { margin: 0; font-size: 1.35rem; }
+.lesson-rule { font-size: 1.12rem; margin: 10px 0; }
+.lesson-example { background: var(--surface-2); border-radius: 16px; padding: 10px 12px 14px; }
+.lesson-example-label { font: 800 .8rem var(--font-body); color: var(--muted); margin-bottom: 6px; }
+.lesson-focus { opacity: .25; transition: opacity .3s, transform .3s; display: inline-block; }
+.lesson-focus.lesson-focus-on { opacity: 1; animation: lesson-pop .45s ease-out; }
+@keyframes lesson-pop { 50% { transform: scale(1.25); } }
+.lesson-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 14px; }
+@media (prefers-reduced-motion: reduce) { .lesson-card, .lesson-focus.lesson-focus-on { animation: none; } }

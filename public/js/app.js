@@ -9,6 +9,8 @@ import { speak, stop, preload } from "./kit/tts.js";
 import { sfx } from "./kit/sound.js";
 import * as FX from "./kit/fx.js";
 import { keepDockVisible } from "./kit/dock.js";
+import { showLesson } from "./kit/lesson.js";
+import { vary, leadIn, praise } from "./kit/vary.js";
 import { esc, pick, starsHtml, starsFor, nextButton, say, showFinish, stickerBook, viewGrownups, installClickSounds, wireVoiceToggle } from "./kit/ui.js";
 import { LEVELS, levelById, PER_LEVEL, makeLevel, choicesFor, sentence } from "./problems.js";
 
@@ -42,6 +44,39 @@ async function moveInto(blocks, cells, { arc = 40 } = {}) {
   sfx.whoosh();
   await FX.flip(before, { dur: 650, arc, stagger: 60 });
 }
+
+// ───────────────────────── "how it works" cards ─────────────────────────
+
+const LESSONS = {
+  count: {
+    emoji: "🐣", title: "Counting blocks",
+    rule: "Tap each block <b>one time</b> as you count. The <b>last number</b> you say tells how many!",
+    exampleHtml: `<div class="lesson-row">${blocksHtml(3, "a")}</div>
+      <p class="lesson-say"><span class="lesson-focus">1…</span> <span class="lesson-focus">2…</span> <span class="lesson-focus">3 blocks!</span></p>`,
+    voice: "Tap each block one time as you count. One, two, three. The last number you say tells how many. Three blocks!",
+  },
+  join: {
+    emoji: "🧲", title: "Snap them together",
+    rule: "Two groups <b>snap together</b> into one bigger group. Then count them <b>all</b>!",
+    exampleHtml: `<div class="lesson-row">${blocksHtml(2, "a")}<span class="snap-plus">+</span>${blocksHtml(1, "b")}</div>
+      <p class="lesson-say"><span class="lesson-focus">Snap!</span> <span class="lesson-focus">2 and 1 make <b>3</b>.</span></p>`,
+    voice: "Two groups snap together into one bigger group. Two blue blocks and one yellow block. Snap! Then count them all. Two and one make three!",
+  },
+  split: {
+    emoji: "✂️", title: "Split some away",
+    rule: "Tap blocks to <b>take them away</b>. Then count how many are <b>left</b>.",
+    exampleHtml: `<div class="lesson-row">${blocksHtml(3, "a")}<span class="lesson-focus">${blocksHtml(1, "a taken")}</span></div>
+      <p class="lesson-say"><span class="lesson-focus">4 take away 1…</span> <span class="lesson-focus"><b>3</b> are left!</span></p>`,
+    voice: "Tap blocks to take them away. Then count how many are left. Four blocks, take away one. Three are left!",
+  },
+};
+LESSONS.mix = {
+  emoji: "🔀", title: "Snap or split?",
+  rule: "Listen carefully! Sometimes you <b>snap</b> groups together, and sometimes you <b>split</b> some away.",
+  exampleHtml: `${LESSONS.join.exampleHtml}${LESSONS.split.exampleHtml}`,
+  voice: "Listen carefully! Sometimes you snap groups together and count them all. Sometimes you take some away and count what's left.",
+};
+const introFor = (level) => LESSONS[level.type];
 
 // ───────────────────────── home ─────────────────────────
 
@@ -92,9 +127,13 @@ function viewPlay(id) {
   const ctx = { bubble, dock, stage, max: level.max, alive: () => alive, miss: () => { mistakes++; } };
 
   (async () => {
+    // "How it works" card first (Listen / Skip / Start), like Grammar and Doubles.
+    bubble.querySelector(".say").textContent = "Here's how it works!";
+    await showLesson(stage, introFor(level));
     for (let k = 0; k < problems.length; k++) {
       if (!alive) return;
       app.querySelectorAll("[data-dot]").forEach((d) => d.classList.toggle("now", +d.dataset.dot === k));
+      ctx.k = k;
       await runProblem(problems[k], ctx);
       if (!alive) return;
       app.querySelector(`[data-dot="${k}"]`)?.classList.add("done");
@@ -193,6 +232,8 @@ function askNumber(answer, ctx, hint) {
 
 async function runProblem(p, ctx) {
   const { stage, bubble, dock, max } = ctx;
+  // Later problems start with a different lead-in ("How about this one?") instead of the same line.
+  const opener = ctx.k > 0 ? `${leadIn()} ` : "";
   const cells = max > 5 ? 10 : 5;
   dock.innerHTML = "";
 
@@ -201,11 +242,11 @@ async function runProblem(p, ctx) {
     const frame = stage.querySelector(".frame");
     const fc = [...frame.querySelectorAll(".cell")];
     for (let i = 0; i < p.n; i++) fc[i].innerHTML = `<span class="blk ${i % 2 ? "b" : "a"} pop-in"></span>`;
-    say(bubble, "How many blocks? Tap each one to count, then pick the number.");
+    say(bubble, `${opener}${vary("count", ["How many blocks? Tap each one to count, then pick the number.", "Let's count! Tap each block, then pick the number.", "How many blocks do you see? Tap them to count.", "Count the blocks! Tap each one, then choose the number."])}`);
     const off = countByTapping(frame, ctx);
     await askNumber(p.answer, ctx, "Count them one at a time. Tap each block!");
     off();
-    say(bubble, `${pick(["Yes!", "That's right!", "Great counting!"])} ${plural(p.n, "block")}.`);
+    say(bubble, `${praise()} ${plural(p.n, "block")}.`);
     return;
   }
 
@@ -215,7 +256,7 @@ async function runProblem(p, ctx) {
       ${frameHtml(cells)}
       <p class="sentence"></p>`;
     const plates = [...stage.querySelectorAll(".plate")];
-    say(bubble, `${plural(p.a, "blue block")} and ${plural(p.b, "yellow block")}. Tap them to snap them together!`);
+    say(bubble, `${opener}${plural(p.a, "blue block")} and ${plural(p.b, "yellow block")}. ${vary("snap", ["Tap them to snap them together!", "Snap them together! Tap the blocks.", "Can you snap them together? Tap them!", "Let's put them together. Tap the blocks!"])}`);
     dock.innerHTML = `<p class="hint">👆 Tap the blocks</p>`;
     await tapOn(plates, ctx);
     if (!ctx.alive()) return;
@@ -225,12 +266,12 @@ async function runProblem(p, ctx) {
     sfx.snap();
     stage.querySelector(".plates").classList.add("empty");
     if (!ctx.alive()) return;
-    say(bubble, "Snap! How many blocks now? Tap each one to count, then pick the number.");
+    say(bubble, `Snap! ${vary("count-all", ["How many blocks now? Tap each one to count, then pick the number.", "How many blocks are there all together? Count them!", "Let's count them all! Tap each block.", "How many in all? Tap to count, then pick."])}`);
     const off = countByTapping(frame, ctx);
     await askNumber(p.answer, ctx, "Count them one at a time. Tap each block!");
     off();
     showSentence(stage, p);
-    say(bubble, `${pick(["Yes!", "That's right!", "You got it!"])} ${p.a} and ${p.b} make ${p.answer}.`);
+    say(bubble, `${praise()} ${p.a} and ${p.b} make ${p.answer}.`);
     return;
   }
 
@@ -243,7 +284,7 @@ async function runProblem(p, ctx) {
   const fc = [...frame.querySelectorAll(".cell")];
   for (let i = 0; i < p.whole; i++) fc[i].innerHTML = `<span class="blk a"></span>`;
   const away = stage.querySelector(".away");
-  say(bubble, `${plural(p.whole, "block")}. Take away ${p.take}! Tap ${p.take} ${p.take === 1 ? "block" : "blocks"}.`);
+  say(bubble, `${opener}${plural(p.whole, "block")}. ${vary("take", [`Take away ${p.take}! Tap ${p.take} ${p.take === 1 ? "block" : "blocks"}.`, `Let's take ${p.take} away. Tap ${p.take === 1 ? "one block" : `${p.take} blocks`}.`, `Can you take away ${p.take}? Tap them!`])}`);
   let left = p.take;
   dock.innerHTML = `<p class="take-left"><b>${left}</b> to take away</p>`;
   frame.classList.add("tap-here");
@@ -272,12 +313,12 @@ async function runProblem(p, ctx) {
   // Slide what's left to the start of the ten-frame, the usual way to read one.
   await FX.sleep(250);
   await moveInto([...frame.querySelectorAll(".blk")], fc, { arc: 0 });
-  say(bubble, "How many are left? Tap each one to count, then pick the number.");
+  say(bubble, vary("left", ["How many are left? Tap each one to count, then pick the number.", "How many blocks are left? Count them!", "Let's count what's left. Tap each block.", "How many stayed? Tap to count, then pick."]));
   const off = countByTapping(frame, ctx);
   await askNumber(p.answer, ctx, "Count the blocks that are left, one at a time!");
   off();
   showSentence(stage, p);
-  say(bubble, `${pick(["Yes!", "That's right!", "You got it!"])} ${p.whole} take away ${p.take} is ${p.answer}.`);
+  say(bubble, `${praise()} ${p.whole} take away ${p.take} is ${p.answer}.`);
 }
 
 function showSentence(stage, p) {
