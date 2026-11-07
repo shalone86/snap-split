@@ -28,7 +28,9 @@ export const LEAD_INS = [
 ];
 export const leadIn = () => vary("lead-in", LEAD_INS);
 
-export const PRAISE = ["Yes!", "You got it!", "Great job!", "That's right!", "Awesome!", "Super!", "Nice work!", "Wonderful!", "Way to go!", "Perfect!"];
+export const PRAISE = ["Yes!", "You got it!", "Great job!", "That's right!", "Awesome!", "Super!", "Nice work!", "Wonderful!", "Way to go!", "Perfect!",
+  // A gentle Angelio touch, heard now and then:
+  "Your guardian angel is cheering for you!", "Way to let your light shine!"];
 export const praise = () => vary("praise", PRAISE);
 
 export const TRY_AGAIN = ["Not quite. Try again!", "Almost! Give it another try.", "Hmm, not that one. Try again!", "So close! Look again.", "Oops! Let's try once more."];
