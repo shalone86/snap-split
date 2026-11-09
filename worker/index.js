@@ -19,6 +19,7 @@ const TTS_VOICES = new Set(TTS_VOICE_LIST);
 const MAX_TEXT = 300;
 
 import { movedResponse } from "./moved.js";
+import { dailyCap } from "./codes.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -59,12 +60,15 @@ async function tts(url, env, ctx) {
   const key = new Request(`https://tts.cache/v3/aura/${voice}/${encodeURIComponent(text)}`);
   const hit = await cache.match(key);
   if (hit) return hit;
+  // Site-wide safety cap on new clips a day (cached clips are free); past it, the app uses the device voice.
+  const cap = await dailyCap(env, "tts", Number(env.TTS_DAILY_CAP ?? 3000));
+  if (!cap.ok) return json({ error: "voice is resting for today" }, 503);
   const raw = await env.AI.run(WORD_MODEL, { text, speaker: voice, encoding: "linear16", container: "wav", sample_rate: 24000 }, { returnRawResponse: true });
   if (!raw.ok) return json({ error: `tts failed (${raw.status})` }, 502);
   const res = new Response(await raw.arrayBuffer(), {
     headers: { "content-type": "audio/wav", "cache-control": "public, max-age=2592000", "x-voice-source": "aura" },
   });
-  ctx.waitUntil(cache.put(key, res.clone()));
+  ctx.waitUntil(Promise.all([cache.put(key, res.clone()), cap.charge()]));
   return res;
 }
 
