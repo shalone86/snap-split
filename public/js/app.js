@@ -2,6 +2,7 @@
 // Built on the learning-app template (see js/kit/). Plain ES modules, no build step.
 
 import * as S from "./kit/store.js";
+import { jingleOnce } from "./kit/jingle.js";
 S.init("snapsplit:v1", { sentences: true });
 
 import { createRouter } from "./kit/router.js";
@@ -11,7 +12,7 @@ import * as FX from "./kit/fx.js";
 import { keepDockVisible } from "./kit/dock.js";
 import { showLesson } from "./kit/lesson.js";
 import { vary, leadIn, praise } from "./kit/vary.js";
-import { esc, pick, starsHtml, starsFor, nextButton, say, showFinish, stickerBook, viewGrownups, installClickSounds, wireVoiceToggle } from "./kit/ui.js";
+import { esc, pick, starsHtml, starsFor, nextButton, say, markDot, showFinish, stickerBook, viewGrownups, installClickSounds, wireVoiceToggle } from "./kit/ui.js";
 import { LEVELS, levelById, PER_LEVEL, makeLevel, choicesFor, sentence } from "./problems.js";
 
 const app = document.getElementById("app");
@@ -134,9 +135,10 @@ function viewPlay(id) {
       if (!alive) return;
       app.querySelectorAll("[data-dot]").forEach((d) => d.classList.toggle("now", +d.dataset.dot === k));
       ctx.k = k;
+      const before = mistakes;
       await runProblem(problems[k], ctx);
       if (!alive) return;
-      app.querySelector(`[data-dot="${k}"]`)?.classList.add("done");
+      markDot(app, k, mistakes > before); // yellow if it took a mistake
       S.solvedOne();
       await nextButton(dock, k < problems.length - 1 ? "Next ▶" : "Finish 🏁");
     }
@@ -393,6 +395,7 @@ function viewFree() {
 }
 
 installClickSounds();
+jingleOnce("snap", () => S.settings().sounds); // the app's little logo sound, on the first tap
 route();
 keepDockVisible();
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});

@@ -1,6 +1,8 @@
 // Settings and progress in this browser's localStorage. Nothing leaves the device.
 // Call init(key, extraSettings) once, first thing in app.js.
 
+import { shareSticker } from "./stickers.js";
+
 const BASE_SETTINGS = {
   readAloud: true, // say every step out loud (for kids still learning to read)
   sounds: true, // sound effects
@@ -40,21 +42,30 @@ export const settings = () => state.settings;
 export function setSetting(k, v) { state.settings[k] = v; save(); }
 
 export const progress = (id) => state.levels[id] ?? { plays: 0, done: 0, stars: 0 };
-export const stickers = () => state.stickers;
+/** Stickers as { e, big, id }. Older saves stored plain emoji (counted as giant) or { emoji, mini }. */
+export const stickers = () => state.stickers.map((s) =>
+  typeof s === "string" ? { e: s, big: true } : { e: s.e ?? s.emoji, big: s.big ?? !s.mini, id: s.id });
 export const solved = () => state.solved;
 export function solvedOne() { state.solved++; save(); }
 
-/** Record a finished level (keeps the best stars). Returns the sticker if one was earned. */
-export function finishLevel(id, stars, sticker) {
+/**
+ * Record a finished level (keeps the best stars) and its sticker: one per level, giant when the
+ * level had no mistakes (`big`), mini otherwise; a mini one grows when the level is perfect later.
+ * Returns { e, big, isNew, grew }.
+ */
+export function finishLevel(id, stars, sticker, big = stars === 3) {
   const p = (state.levels[id] ??= { plays: 0, done: 0, stars: 0 });
   const first = !p.done;
   p.plays++;
   p.done++;
   p.stars = Math.max(p.stars, stars);
   p.at = Date.now();
-  let earned = null;
-  if (sticker && (first || stars === 3)) { state.stickers.push(sticker); earned = sticker; }
+  let entry = state.stickers.find((s) => s && typeof s === "object" && s.id === id);
+  let isNew = false, grew = false;
+  if (!entry) { entry = { e: sticker, big: !!big, id }; state.stickers.push(entry); isNew = true; }
+  else if (big && !entry.big) { entry.big = true; grew = true; }
   save();
-  return earned;
+  shareSticker(KEY.split(":")[0], id, entry.e, entry.big);
+  return { e: entry.e, big: entry.big, isNew, grew, first };
 }
 export function resetProgress() { state.levels = {}; state.stickers = []; state.solved = 0; save(); }
