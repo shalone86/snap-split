@@ -20,7 +20,7 @@ export async function health(force = false) {
 /** Fetch server TTS audio as a Blob (or throw). */
 export async function serverTts(text, voice) {
   // Audio is cached for a month; bump v when the server's voice output changes.
-  const q = new URLSearchParams({ text, voice: voice || "", v: "3" });
+  const q = new URLSearchParams({ text, voice: voice || "", v: "4" });
   const r = await fetch(`api/tts?${q}`, { headers: headers() });
   if (!r.ok) throw new Error(`TTS ${r.status}`);
   return r.blob();

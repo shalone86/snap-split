@@ -20,6 +20,7 @@ const MAX_TEXT = 300;
 
 import { movedResponse } from "./moved.js";
 import { dailyCap } from "./codes.js";
+import { louder } from "./loud.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -57,7 +58,7 @@ async function tts(url, env, ctx) {
   // Everything uses Aura-2 (the nicer voice), as 24 kHz WAV: Safari won't reliably play its
   // very short mp3 clips (single numbers).
   const cache = caches.default;
-  const key = new Request(`https://tts.cache/v3/aura/${voice}/${encodeURIComponent(text)}`);
+  const key = new Request(`https://tts.cache/v4/aura/${voice}/${encodeURIComponent(text)}`);
   const hit = await cache.match(key);
   if (hit) return hit;
   // Site-wide safety cap on new clips a day (cached clips are free); past it, the app uses the device voice.
@@ -65,7 +66,7 @@ async function tts(url, env, ctx) {
   if (!cap.ok) return json({ error: "voice is resting for today" }, 503);
   const raw = await env.AI.run(WORD_MODEL, { text, speaker: voice, encoding: "linear16", container: "wav", sample_rate: 24000 }, { returnRawResponse: true });
   if (!raw.ok) return json({ error: `tts failed (${raw.status})` }, 502);
-  const res = new Response(await raw.arrayBuffer(), {
+  const res = new Response(louder(await raw.arrayBuffer()), { // steady, louder level for every voice
     headers: { "content-type": "audio/wav", "cache-control": "public, max-age=2592000", "x-voice-source": "aura" },
   });
   ctx.waitUntil(Promise.all([cache.put(key, res.clone()), cap.charge()]));
