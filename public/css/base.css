@@ -200,3 +200,6 @@ body.in-game .topbar { display: none; }
 @keyframes lesson-pop { 50% { transform: scale(1.25); } }
 .lesson-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 14px; }
 @media (prefers-reduced-motion: reduce) { .lesson-card, .lesson-focus.lesson-focus-on { animation: none; } }
+
+/* Our own drawn stickers size like emoji. */
+.art-sticker { width: 1em; height: 1em; vertical-align: -0.15em; display: inline-block; }

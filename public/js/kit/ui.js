@@ -19,7 +19,15 @@ export const STICKERS = ["🦄", "🚀", "🦖", "🌈", "🐙", "🎈", "🦋",
   "🍄", "🌷", "⛲", "🧸", "🪁", "🍩", "🍦", "🍉", "🕊️", "👼", "🐟",
   // From our faith (about one sticker in four): church, cross, rosary, candle, praying hands, bread and
   // grapes, the Lamb, a bell, a rose for Mary, the star of Bethlehem, the ox and donkey at the manger.
-  "⛪", "✝️", "📿", "🕯️", "🙏", "🍞", "🍇", "🐑", "🔔", "🌹", "🌟", "🐂", "🫏", "👼", "🕊️"];
+  "⛪", "✝️", "📿", "🕯️", "🙏", "🍞", "🍇", "🐑", "🔔", "🌹", "🌟", "🐂", "🫏", "👼", "🕊️",
+  // Our own drawings (emoji have no Mary, chalice or Sacred Heart): angelio.org/stickers/art/
+  "art:mary", "art:baby-jesus", "art:sacred-heart", "art:chalice", "art:monstrance", "art:bible", "art:lily"];
+
+/** A sticker as HTML: an emoji, or one of our drawings ("art:mary"). Sized by font-size, like emoji. */
+const ART = { mary: "Mary", "baby-jesus": "Baby Jesus", "sacred-heart": "Sacred Heart", chalice: "Chalice", monstrance: "Monstrance", bible: "Holy Bible", lily: "Lily" };
+export const stickerHtml = (e) => (String(e).startsWith("art:")
+  ? `<img class="art-sticker" src="https://angelio.org/stickers/art/${esc(e.slice(4))}.svg" alt="${esc(ART[e.slice(4)] ?? "sticker")}" draggable="false">`
+  : esc(e));
 
 export const starsHtml = (n) => `<span class="stars" aria-label="${n} of 3 stars">${"★".repeat(n)}<span class="off">${"★".repeat(3 - n)}</span></span>`;
 // 3 stars only with no mistakes, matching the giant sticker (any mistake: a mini sticker and a yellow dot).
@@ -72,7 +80,7 @@ export function showFinish(app, { id, stars, mistakes, title, done, again, next,
     <section class="finish">
       <div class="big-stars">${starsHtml(stars)}</div>
       <h1>${perfect ? vary("perfect", ["Perfect!", "No mistakes!", "Super star!"]) : title}</h1>
-      <p class="new-sticker ${st.big ? "big-sticker" : "mini-sticker"}${st.grew ? " grew" : ""}"><span>${st.e}</span><br>${label}</p>
+      <p class="new-sticker ${st.big ? "big-sticker" : "mini-sticker"}${st.grew ? " grew" : ""}"><span>${stickerHtml(st.e)}</span><br>${label}</p>
       ${line ? `<p class="muted">${esc(line)}</p>` : ""}
       <div class="row center">
         <a class="btn big${st.big ? "" : " primary"}" href="${again}" data-again>🔁 ${st.big ? "Play again" : "Try for giant!"}</a>
@@ -91,7 +99,7 @@ export function stickerBook() {
   const st = S.stickers();
   return `<section class="sticker-book">
       <h2>My stickers <small>${S.solved()} solved</small></h2>
-      ${st.length ? `<div class="stickers">${st.map((s) => `<span class="${s.big ? "big" : "mini"}" title="${s.big ? "giant" : "mini"} sticker">${s.e}</span>`).join("")}</div>`
+      ${st.length ? `<div class="stickers">${st.map((s) => `<span class="${s.big ? "big" : "mini"}" title="${s.big ? "giant" : "mini"} sticker">${stickerHtml(s.e)}</span>`).join("")}</div>`
         : `<p class="muted small">Finish a level to get your first sticker! No mistakes makes it a giant one.</p>`}
       ${STICKER_WORLD && st.length ? `<a class="btn world-link" href="${STICKER_WORLD}">🌍 Play in Sticker World</a>` : ""}
     </section>`;
