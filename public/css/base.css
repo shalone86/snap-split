@@ -203,3 +203,11 @@ body.in-game .topbar { display: none; }
 
 /* Our own drawn stickers size like emoji. */
 .art-sticker { width: 1em; height: 1em; vertical-align: -0.15em; display: inline-block; }
+
+/* Sideways phones: room for every top-bar button (✕, dots, 💬, 💡, 🔊) in the 256px column. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .play-top { gap: 4px; }
+  .play-top .icon-btn { width: 34px; height: 34px; flex: none; font-size: .95rem; }
+  .play-top .dots { gap: 4px; min-width: 0; }
+  .play-top .dots i { width: 9px; height: 9px; }
+}
