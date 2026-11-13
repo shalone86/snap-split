@@ -130,26 +130,86 @@ async function speakBrowser(text, rate, id) {
   });
 }
 
-/** Say text aloud (if read-aloud is on, or force). Resolves when it's done. Never throws. */
-export async function speak(text, { force = false } = {}) {
+// Long lines start sooner: they're split into sentences that are all fetched at once and played in
+// order, so the voice starts as soon as the first short sentence is ready (a whole lesson card took
+// several seconds to make). Text in {{double braces}} is a sound that may have a grown-up's recording
+// (see setClips); without one it's read like the rest of the text.
+let clipFor = () => null;
+/** fn(sound) → URL of a recording of that sound, or null. */
+export function setClips(fn) { clipFor = fn; }
+const MARK = /\{\{([^}]+)\}\}/g;
+/** The text without {{ }} marks, for showing on screen. */
+export const unmark = (t) => String(t ?? "").replace(MARK, "$1");
+
+function pieces(text) {
+  const out = [];
+  let buf = "", last = 0;
+  const flush = () => {
+    const t = buf.replace(/^[\s,;:]+/, "").trim();
+    buf = "";
+    if (!t) return;
+    let cur = "";
+    for (const s of t.split(/(?<=[.!?])\s+/)) {
+      cur = cur ? `${cur} ${s}` : s;
+      if (cur.length >= 40) { out.push({ text: cur }); cur = ""; }
+    }
+    if (cur) out.push({ text: cur });
+  };
+  for (const m of text.matchAll(MARK)) {
+    buf += text.slice(last, m.index);
+    last = m.index + m[0].length;
+    const clip = clipFor(m[1]);
+    if (clip) { flush(); out.push({ clip, text: m[1] }); } else buf += m[1];
+  }
+  buf += text.slice(last);
+  flush();
+  return out;
+}
+
+async function playPieces(text, rate, id, server) {
+  const list = pieces(text);
+  const voice = settings().voice;
+  const urls = list.map((p) => (p.clip || !server ? null : serverUrl(p.text, voice)));
+  urls.forEach((u) => u?.catch(() => {}));
+  for (let i = 0; i < list.length; i++) {
+    if (id !== playId) return;
+    const p = list[i];
+    if (p.clip && player) {
+      try { await playThrough(p.clip, rate); continue; } catch { if (server) urls[i] = serverUrl(p.text, voice); }
+    }
+    if (!server) { await speakBrowser(p.text, rate * 0.95, id); continue; }
+    let url;
+    try { url = await urls[i]; } catch (e) {
+      // The server voice stopped answering: the device voice says the rest (recordings still play).
+      serverFailedAt = Date.now();
+      server = false;
+      console.warn("Server voice failed, using the device voice", e);
+      i--;
+      continue;
+    }
+    if (id !== playId) return;
+    await playThrough(url, rate);
+  }
+}
+
+/** Say text aloud (if read-aloud is on, or force). rate: 0.65 for slowly. Resolves when done. Never throws. */
+export async function speak(text, { force = false, rate: speed = 1 } = {}) {
   const clean = normalizeTtsText(text);
   if (!clean || (!settings().readAloud && !force)) return;
   stop();
   const id = playId;
-  const rate = settings().slow ? 0.8 : 1;
+  const rate = (settings().slow ? 0.8 : 1) * speed;
   try {
     if (player && (await useServer())) {
       try {
-        const url = await serverUrl(clean, settings().voice);
-        if (id !== playId) return;
-        return await playThrough(url, rate);
+        return await playPieces(clean, rate, id, true);
       } catch (e) {
         if (!/play/i.test(String(e?.message))) serverFailedAt = Date.now();
         if (id !== playId) return;
         console.warn("Server voice failed, using the device voice", e);
       }
     }
-    await speakBrowser(clean, rate * 0.95, id);
+    await playPieces(clean, rate, id, false);
   } catch (e) { console.warn(e); }
 }
 
