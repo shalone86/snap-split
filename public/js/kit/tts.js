@@ -148,12 +148,8 @@ function pieces(text) {
     const t = buf.replace(/^[\s,;:]+/, "").trim();
     buf = "";
     if (!t) return;
-    let cur = "";
-    for (const s of t.split(/(?<=[.!?])\s+/)) {
-      cur = cur ? `${cur} ${s}` : s;
-      if (cur.length >= 40) { out.push({ text: cur }); cur = ""; }
-    }
-    if (cur) out.push({ text: cur });
+    // One clip per sentence, so stock lines ("Great job!") are made once and reused.
+    for (const s of t.split(/(?<=[.!?])\s+/)) if (s) out.push({ text: s });
   };
   for (const m of text.matchAll(MARK)) {
     buf += text.slice(last, m.index);

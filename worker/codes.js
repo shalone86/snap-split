@@ -38,7 +38,7 @@ export function newCode(randomBytes = (n) => crypto.getRandomValues(new Uint8Arr
 }
 
 const num = async (kv, k) => Number((await kv.get(k)) ?? 0);
-const bump = (kv, k, ttl) => num(kv, k).then((n) => kv.put(k, String(n + 1), ttl ? { expirationTtl: ttl } : undefined));
+const bump = (kv, k, ttl, by = 1) => num(kv, k).then((n) => kv.put(k, String(n + by), ttl ? { expirationTtl: ttl } : undefined));
 
 /** { valid, name, limit, used, left, revoked } for a code (valid: false when unknown). */
 export async function codeStatus(env, code, now = new Date()) {
@@ -90,5 +90,5 @@ export async function dailyCap(env, kind, cap, now = new Date()) {
   if (!env.CODES || !cap) return { ok: true, charge: async () => {} };
   const k = `cap:${kind}:${day(now)}`;
   const ok = (await num(env.CODES, k)) < cap;
-  return { ok, charge: () => bump(env.CODES, k, 60 * 60 * 72) };
+  return { ok, charge: (by = 1) => bump(env.CODES, k, 60 * 60 * 72, by) };
 }

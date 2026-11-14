@@ -61,20 +61,41 @@ async function tts(url, env, ctx) {
   const key = new Request(`https://tts.cache/v4/aura/${voice}/${encodeURIComponent(text)}`);
   const hit = await cache.match(key);
   if (hit) return hit;
-  // Site-wide safety cap on new clips a day (cached clips are free); past it, the app uses the device voice.
+  const store = await savedClip(env, "v4", voice, text);
+  const saved = await store.get();
+  if (saved) {
+    const res = new Response(saved, { headers: { "content-type": "audio/wav", "cache-control": "public, max-age=2592000", "x-voice-source": "saved" } });
+    ctx.waitUntil(cache.put(key, res.clone()));
+    return res;
+  }
+  // Site-wide safety caps on NEW clips a day, shared by all apps (saved clips are free): a number of clips,
+  // and a number of characters, which is what the voice costs ($0.03 per 1,000 characters; about the first
+  // 3,600 a day are free). Past either one, the apps use the device's own voice until midnight UTC.
   const cap = await dailyCap(env, "tts", Number(env.TTS_DAILY_CAP ?? 3000));
-  if (!cap.ok) return json({ error: "voice is resting for today" }, 503);
+  const chars = await dailyCap(env, "ttschars", Number(env.TTS_DAILY_CHARS ?? 15000));
+  if (!cap.ok || !chars.ok) return json({ error: "voice is resting for today" }, 503);
   const raw = await env.AI.run(WORD_MODEL, { text, speaker: voice, encoding: "linear16", container: "wav", sample_rate: 24000 }, { returnRawResponse: true });
   if (!raw.ok) return json({ error: `tts failed (${raw.status})` }, 502);
-  const res = new Response(louder(await raw.arrayBuffer()), { // steady, louder level for every voice
+  const wav = louder(await raw.arrayBuffer()); // steady, louder level for every voice
+  const res = new Response(wav, {
     headers: { "content-type": "audio/wav", "cache-control": "public, max-age=2592000", "x-voice-source": "aura" },
   });
-  ctx.waitUntil(Promise.all([cache.put(key, res.clone()), cap.charge()]));
+  ctx.waitUntil(Promise.all([cache.put(key, res.clone()), store.put(wav), cap.charge(), chars.charge(text.length)]));
   return res;
 }
 
 
 
+
+// Every new clip is also saved in the shared KV store, so a line is made (and paid for) once, for every
+// app and every Cloudflare data center. The edge cache is only per data center, and it can forget.
+async function savedClip(env, prefix, voice, text) {
+  if (!env.CODES) return { get: async () => null, put: async () => {} };
+  const h = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${voice}|${text}`)))]
+    .map((b) => b.toString(16).padStart(2, "0")).join("");
+  const k = `tts:${prefix}:${h}`;
+  return { get: () => env.CODES.get(k, "arrayBuffer"), put: (buf) => env.CODES.put(k, buf) };
+}
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
